@@ -45,6 +45,32 @@ fn mimc<F: Field>(mut xl: F, mut xr: F, constants: &[F]) -> F {
     xl
 }
 
+struct AddDemo<F: Field> {
+    x: Option<F>,
+    y: Option<F>,
+}
+
+impl< F: Field> ConstraintSynthesizer<F> for AddDemo<F> {
+    fn generate_constraints(self, cs: ConstraintSystemRef<F>) -> Result<(), SynthesisError> {
+        let x_value = self.x;
+        let x = cs.new_witness_variable(|| x_value.ok_or(SynthesisError::AssignmentMissing))?;
+
+        let y_value = self.y;
+        let y = cs.new_witness_variable(|| y_value.ok_or(SynthesisError::AssignmentMissing))?;
+
+        let z_value = x_value.map(|mut e| {
+            e.add_assign(&y_value.unwrap());
+            e
+        });
+        let z = cs.new_witness_variable(|| z_value.ok_or(SynthesisError::AssignmentMissing))?;
+
+        cs.enforce_constraint(lc!() + x, lc!() + y, lc!() + z)?;
+
+        Ok(())
+    }
+}
+
+
 /// This is our demo circuit for proving knowledge of the
 /// preimage of a MiMC hash invocation.
 struct MiMCDemo<'a, F: Field> {
@@ -127,6 +153,13 @@ impl<'a, F: Field> ConstraintSynthesizer<F> for MiMCDemo<'a, F> {
     }
 }
 
+// struct AddDemo<'a, F: Field> {
+//     x: Option<F>,
+//     y: Option<F>,
+// }
+
+
+
 
 pub fn main() {
     // TODO: Implement your guest code here
@@ -146,24 +179,27 @@ pub fn main() {
  
     //  println!("Creating parameters...");
  
-    //  // Create parameters for our circuit
-    //  let (pk, vk) = {
-    //      let c = MiMCDemo::<Fr> {
-    //          xl: None,
-    //          xr: None,
-    //          constants: &constants,
-    //      };
+     // Create parameters for our circuit
+     let (pk, vk) = {
+        //  let c = MiMCDemo::<Fr> {
+        //      xl: None,
+        //      xr: None,
+        //      constants: &constants,
+        //  };
+        let c = AddDemo::<Fr> {
+            x: None,
+            y: None,
+        };
  
-    //      Groth16::<Bls12_377>::setup(c, &mut rng).unwrap()
-    //  };
+         Groth16::<Bls12_377>::setup(c, &mut rng).unwrap()
+     };
  
-    //  // Prepare the verification key (for proof verification)
+     // Prepare the verification key (for proof verification)
     //  let pvk = Groth16::<Bls12_377>::process_vk(&vk).unwrap();
  
-    //  println!("Creating proofs...");
  
     //  // Let's benchmark stuff!
-    //  const SAMPLES: u32 = 1;
+     const SAMPLES: u32 = 1;
     //  let mut total_proving = Duration::new(0, 0);
     //  let mut total_verifying = Duration::new(0, 0);
  
@@ -171,10 +207,10 @@ pub fn main() {
     //  // benchmark deserialization.
     //  // let mut proof_vec = vec![];
  
-    //  for _ in 0..SAMPLES {
+     for _ in 0..SAMPLES {
     //      // Generate a random preimage and compute the image
-    //      let xl = rng.gen();
-    //      let xr = rng.gen();
+        //  let x = rng.gen();
+        //  let y = rng.gen();
     //      let image = mimc(xl, xr, &constants);
  
     //      // proof_vec.truncate(0);
@@ -205,7 +241,7 @@ pub fn main() {
     //      // let proof = Proof::read(&proof_vec[..]).unwrap();
     //      // Check the proof
  
-    //  }
+     }
     
 
     // TODO: do something with the input
