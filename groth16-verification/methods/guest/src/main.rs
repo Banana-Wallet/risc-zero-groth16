@@ -52,23 +52,27 @@ struct AddDemo<F: Field> {
 
 impl< F: Field> ConstraintSynthesizer<F> for AddDemo<F> {
     fn generate_constraints(self, cs: ConstraintSystemRef<F>) -> Result<(), SynthesisError> {
-        let x_value = self.x;
-        let x = cs.new_witness_variable(|| x_value.ok_or(SynthesisError::AssignmentMissing))?;
+        
 
-        let y_value = self.y;
-        let y = cs.new_witness_variable(|| y_value.ok_or(SynthesisError::AssignmentMissing))?;
+        let a = cs.new_witness_variable(|| self.x.ok_or(SynthesisError::AssignmentMissing))?;
+        let b = cs.new_witness_variable(|| self.y.ok_or(SynthesisError::AssignmentMissing))?;
+        let c = cs.new_input_variable(|| {
+            let mut a = self.x.ok_or(SynthesisError::AssignmentMissing)?;
+            let b = self.y.ok_or(SynthesisError::AssignmentMissing)?;
 
-        let z_value = x_value.map(|mut e| {
-            e.add_assign(&y_value.unwrap());
-            e
-        });
-        let z = cs.new_witness_variable(|| z_value.ok_or(SynthesisError::AssignmentMissing))?;
-
-        cs.enforce_constraint(lc!() + x, lc!() + y, lc!() + z)?;
+            a.mul_assign(&b);
+            Ok(a)
+        })?;
+        cs.enforce_constraint(
+            lc!() + a, 
+            lc!() + b,  
+            lc!() + c
+        )?;
 
         Ok(())
     }
 }
+
 
 
 /// This is our demo circuit for proving knowledge of the
@@ -209,33 +213,36 @@ pub fn main() {
  
      for _ in 0..SAMPLES {
     //      // Generate a random preimage and compute the image
-        //  let x = rng.gen();
-        //  let y = rng.gen();
-    //      let image = mimc(xl, xr, &constants);
+            let x = Fr::from(4);
+            let y = Fr::from(5);
+        //  let image = mimc(xl, xr, &constants);
  
     //      // proof_vec.truncate(0);
- 
-    //      {
-    //          // Create an instance of our circuit (with the
-    //          // witness)
-    //          let c = MiMCDemo {
-    //              xl: Some(xl),
-    //              xr: Some(xr),
-    //              constants: &constants,
-    //          };
- 
-    //          // Create a groth16 proof with our parameters.
-    //          let proof = Groth16::<Bls12_377>::prove(&pk, c, &mut rng).unwrap();
-    //          print!("proof: {:?}", &proof);
-    //          // print!("image: {:?}", &image);
-    //          // print!("verification key: {:?}", &pvk);
- 
-    //          assert!(
-    //              Groth16::<Bls12_377>::verify_with_processed_vk(&pvk, &[image], &proof).unwrap()
-    //          );
- 
-    //          // proof.write(&mut proof_vec).unwrap();
-    //      }
+            {
+                // Create an instance of our circuit (with the
+                // witness)
+            //  let c = MiMCDemo {
+            //      xl: Some(xl),
+            //      xr: Some(xr),
+            //      constants: &constants,
+            //  };
+            let c = AddDemo {
+                x: Some(x),
+                y: Some(y),
+            };
+
+                // Create a groth16 proof with our parameters.
+                let proof = Groth16::<Bls12_377>::prove(&pk, c, &mut rng).unwrap();
+                // print!("proof: {:?}", &proof);
+                // print!("image: {:?}", &image);
+                // print!("verification key: {:?}", &pvk);
+
+            //  assert!(
+            //      Groth16::<Bls12_377>::verify_with_processed_vk(&pvk, &[image], &proof).unwrap()
+            //  );
+
+                // proof.write(&mut proof_vec).unwrap();
+            }
  
  
     //      // let proof = Proof::read(&proof_vec[..]).unwrap();
