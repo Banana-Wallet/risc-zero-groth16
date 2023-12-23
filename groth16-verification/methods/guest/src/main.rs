@@ -199,7 +199,7 @@ pub fn main() {
      };
  
      // Prepare the verification key (for proof verification)
-    //  let pvk = Groth16::<Bls12_377>::process_vk(&vk).unwrap();
+     let pvk = Groth16::<Bls12_377>::process_vk(&vk).unwrap();
  
  
     //  // Let's benchmark stuff!
@@ -215,6 +215,8 @@ pub fn main() {
     //      // Generate a random preimage and compute the image
             let x = Fr::from(4);
             let y = Fr::from(5);
+            let z = Fr::from(20);
+
         //  let image = mimc(xl, xr, &constants);
  
     //      // proof_vec.truncate(0);
@@ -233,20 +235,12 @@ pub fn main() {
 
                 // Create a groth16 proof with our parameters.
                 let proof = Groth16::<Bls12_377>::prove(&pk, c, &mut rng).unwrap();
-                // print!("proof: {:?}", &proof);
-                // print!("image: {:?}", &image);
-                // print!("verification key: {:?}", &pvk);
-
-            //  assert!(
-            //      Groth16::<Bls12_377>::verify_with_processed_vk(&pvk, &[image], &proof).unwrap()
-            //  );
-
-                // proof.write(&mut proof_vec).unwrap();
+                assert!(
+                    Groth16::<Bls12_377>::verify_with_processed_vk(&pvk, &[z], &proof).unwrap()
+                );
+                
             }
- 
- 
-    //      // let proof = Proof::read(&proof_vec[..]).unwrap();
-    //      // Check the proof
+
  
      }
     
